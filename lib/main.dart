@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '/Features/features.dart';
+import '/Tip/Tip_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,8 +14,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: '600 Câu hỏi GPLX',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.blue,
+          foregroundColor: Colors.black,
+        ),
       ),
       home: const MyHomePage(title: '200 câu GPLX Hạng A1'),
       debugShowCheckedModeBanner: false,
@@ -50,6 +55,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
+      // mỗi tính năng hiển thị dưới dạng GridView
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: GridView.builder(
@@ -62,6 +68,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           itemBuilder: (context, index) {
             final item = features[index];
+            // Mỗi mục (feature) là một nút (ElevatedButton).
             return ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: item['color'],
@@ -70,7 +77,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
               onPressed: () {
-                // You can define navigation or actions here.
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => TipsScreen()),
+                );
               },
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,

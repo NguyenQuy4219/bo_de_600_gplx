@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '/Tip/Tip_page.dart';
+import 'Question/Questions_page.dart';
 
 import '/Settings/setting_page.dart';
 import '/Data/data.dart';
@@ -85,7 +86,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   context,
                   MaterialPageRoute(builder: (context) => TipsScreen()),
                 );
-              },
+              },  
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

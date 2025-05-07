@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '/Features/features.dart';
-import '/Tip/Tip_page.dart';
+
+import '/Tip/Tip_page.dart';  
+
+import '/Settings/setting_page.dart';
+
 
 void main() {
   runApp(const MyApp());
@@ -47,9 +51,9 @@ class _MyHomePageState extends State<MyHomePage> {
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Chức năng cài đặt chưa được hỗ trợ')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsPage()),
               );
             },
           ),

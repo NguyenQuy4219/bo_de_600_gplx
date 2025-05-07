@@ -15,7 +15,7 @@ final List<Map<String, dynamic>> features = [
     'color': Colors.purple,
     'icon': Icons.tips_and_updates
   },
-  {'title': '20 câu điểm liệt', 'color': Colors.brown, 'icon': Icons.warning},
+  {'title': '60 câu điểm liệt', 'color': Colors.brown, 'icon': Icons.warning},
   {
     'title': 'Top 50 câu sai',
     'color': Colors.blueGrey,

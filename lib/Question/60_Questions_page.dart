@@ -20,8 +20,16 @@ class QuestionScreen extends StatefulWidget {
 }
 
 class _QuestionScreenState extends State<QuestionScreen> {
+  List<Question> fatalQuestions = [];
   int currentIndex = 0;
   int selectedOption = -1;
+
+  @override
+  void initState() {
+    super.initState();
+    // Lọc danh sách câu hỏi điểm liệt
+    fatalQuestions = questions.where((q) => q.isDiemLiet).toList();
+  }
 
   void nextQuestion() {
     setState(() {
@@ -43,7 +51,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentQuestion = questions[currentIndex];
+    final currentQuestion = fatalQuestions[currentIndex];
 
     return Scaffold(
       appBar: AppBar(
@@ -89,9 +97,11 @@ class _QuestionScreenState extends State<QuestionScreen> {
                     icon: Icon(Icons.arrow_back_ios, color: Colors.blue),
                     onPressed: prevQuestion,
                   ),
-                  Text('60 CÂU HỎI',
-                      style: TextStyle(
-                          color: Colors.blue, fontWeight: FontWeight.bold)),
+                  Text(
+                    '${fatalQuestions.length} CÂU HỎI ĐIỂM LIỆT',
+                    style: TextStyle(
+                        color: Colors.blue, fontWeight: FontWeight.bold),
+                  ),
                   IconButton(
                     icon: Icon(Icons.arrow_forward_ios, color: Colors.blue),
                     onPressed: nextQuestion,

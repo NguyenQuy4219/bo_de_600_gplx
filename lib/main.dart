@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '/Tip/Tip_page.dart';
+import 'Question/60_Questions_page.dart';
 
 import '/Settings/setting_page.dart';
 import '/Data/data.dart';
@@ -81,10 +82,18 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => TipsScreen()),
-                );
+                final title = item['title'];
+
+                if (title == '60 câu điểm liệt') {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => QuestionScreen()));
+                } else if (title == 'Mẹo ghi nhớ') {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => TipsScreen()));
+                }
+                ;
               },
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,

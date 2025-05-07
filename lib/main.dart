@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-
-import '/Tip/Tip_page.dart';
+import 'Question/random_question_page.dart';
 import 'Question/60_Questions_page.dart';
-
-import '/Settings/setting_page.dart';
-import '/Data/data.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'Tip/Tip_page.dart';
+import 'Settings/setting_page.dart';
+import 'Data/data.dart';
 
 void main() {
   runApp(const MyApp());
@@ -34,7 +32,6 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
   final String title;
 
   @override
@@ -42,6 +39,23 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  void _handleFeatureTap(String title) {
+    if (title == '60 câu điểm liệt') {
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => QuestionScreen()));
+    } else if (title == 'Mẹo ghi nhớ') {
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => TipsScreen()));
+    } else if (title == 'Đề ngẫu nhiên') {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => const CauHoiNgauNhienPage()));
+    } else if (title == 'Câu hỏi lý thuyết') {
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => QuestionScreen()));
+    }
+    // Các mục khác có thể thêm vào tương tự
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,7 +74,6 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-      // mỗi tính năng hiển thị dưới dạng GridView
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: GridView.builder(
@@ -73,7 +86,6 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           itemBuilder: (context, index) {
             final item = features[index];
-            // Mỗi mục (feature) là một nút (ElevatedButton).
             return ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: item['color'],
@@ -81,20 +93,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onPressed: () {
-                final title = item['title'];
-
-                if (title == '60 câu điểm liệt') {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => QuestionScreen()));
-                } else if (title == 'Mẹo ghi nhớ') {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => TipsScreen()));
-                }
-                ;
-              },
+              onPressed: () => _handleFeatureTap(item['title']),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '/Features/features.dart';
 
-import '/Tip/Tip_page.dart';  
+import '/Tip/Tip_page.dart';
 
 import '/Settings/setting_page.dart';
-
+import '/Data/data.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
           foregroundColor: Colors.black,
         ),
       ),
-      home: const MyHomePage(title: '200 câu GPLX Hạng A1'),
+      home: const MyHomePage(title: '600 Câu hỏi GPLX'),
       debugShowCheckedModeBanner: false,
     );
   }

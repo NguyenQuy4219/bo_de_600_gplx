@@ -1,9 +1,11 @@
+import 'Traffic_sign/traffic_sign_page.dart';
 import 'package:flutter/material.dart';
 import 'Question/random_question_page.dart';
 import 'Question/60_Questions_page.dart';
 import 'Tip/Tip_page.dart';
 import 'Settings/setting_page.dart';
 import 'Data/data.dart';
+import 'Data/traffic_sign.dart';
 
 void main() {
   runApp(const MyApp());
@@ -49,9 +51,9 @@ class _MyHomePageState extends State<MyHomePage> {
     } else if (title == 'Đề ngẫu nhiên') {
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => const CauHoiNgauNhienPage()));
-    } else if (title == 'Câu hỏi lý thuyết') {
-      Navigator.push(
-          context, MaterialPageRoute(builder: (context) => QuestionScreen()));
+    } else if (title == 'Các biển báo') {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => TrafficSignsScreen()));
     }
     // Các mục khác có thể thêm vào tương tự
   }

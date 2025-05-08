@@ -127,7 +127,7 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Xác nhận'),
+        title: const Text('Quay về trang chủ'),
         content:
             const Text('Bạn có chắc muốn kết thúc bài thi và xem kết quả?'),
         actions: [

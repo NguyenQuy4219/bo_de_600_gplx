@@ -71,7 +71,7 @@ class _HistoryPageState extends State<HistoryPage> {
                 showDialog(
                   context: context,
                   builder: (_) => AlertDialog(
-                    title: const Text('Xác nhận'),
+                    title: const Text('Xóa lịch sử bài làm'),
                     content:
                         const Text('Bạn có chắc muốn xóa toàn bộ lịch sử?'),
                     actions: [

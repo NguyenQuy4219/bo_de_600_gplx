@@ -1,46 +1,51 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Data/data.dart';
 import '../Result/result_page.dart';
+import 'dart:convert';
 
-class CauHoiNgauNhienPage extends StatefulWidget {
-  const CauHoiNgauNhienPage({super.key});
+class ExamScreen extends StatefulWidget {
+  final int examIndex;
+  final List<Question> examQuestions;
+
+  const ExamScreen({
+    super.key,
+    required this.examIndex,
+    required this.examQuestions,
+  });
 
   @override
-  State<CauHoiNgauNhienPage> createState() => _CauHoiNgauNhienPageState();
+  State<ExamScreen> createState() => _ExamScreenState();
 }
 
-class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
-  final int totalQuestions = 20;
-  final Duration examDuration = const Duration(minutes: 19);
-
-  late List<Question> quizQuestions;
+class _ExamScreenState extends State<ExamScreen> {
   int currentIndex = 0;
   int? selectedAnswer;
   List<int?> userAnswers = [];
   List<bool?> answerResults = [];
 
-  late Duration remainingTime;
+  Duration remainingTime = const Duration(minutes: 19);
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    remainingTime = examDuration;
-    _generateRandomQuiz();
+
+    userAnswers = List.filled(widget.examQuestions.length, null);
+    answerResults = List.filled(widget.examQuestions.length, null);
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) return;
-      setState(() {
-        if (remainingTime.inSeconds > 0) {
-          remainingTime = remainingTime - const Duration(seconds: 1);
-        } else {
-          timer.cancel();
-          _navigateToResultPage();
-        }
-      });
+      if (mounted) {
+        setState(() {
+          if (remainingTime.inSeconds > 0) {
+            remainingTime = remainingTime - const Duration(seconds: 1);
+          } else {
+            timer.cancel();
+            _navigateToResultPage();
+          }
+        });
+      }
     });
   }
 
@@ -50,16 +55,9 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
     super.dispose();
   }
 
-  void _generateRandomQuiz() {
-    quizQuestions = [...questions]..shuffle();
-    quizQuestions = quizQuestions.take(totalQuestions).toList();
-    userAnswers = List.filled(totalQuestions, null);
-    answerResults = List.filled(totalQuestions, null);
-  }
-
   void _checkAnswer() {
-    final correct =
-        selectedAnswer == quizQuestions[currentIndex].correctAnswerIndex;
+    final question = widget.examQuestions[currentIndex];
+    final correct = selectedAnswer == question.correctAnswerIndex;
     userAnswers[currentIndex] = selectedAnswer;
     answerResults[currentIndex] = correct;
 
@@ -68,14 +66,14 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
       builder: (_) => AlertDialog(
         title: Text(correct ? '✅ Chính xác!' : '❌ Sai rồi'),
         content: Text(
-          'Đáp án đúng là: ${quizQuestions[currentIndex].answers[quizQuestions[currentIndex].correctAnswerIndex]}',
+          'Đáp án đúng là: ${question.answers[question.correctAnswerIndex]}',
         ),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               setState(() {
-                if (currentIndex < totalQuestions - 1) {
+                if (currentIndex < widget.examQuestions.length - 1) {
                   currentIndex++;
                   selectedAnswer = userAnswers[currentIndex];
                 } else if (_isQuizCompleted()) {
@@ -91,21 +89,38 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
   }
 
   bool _isQuizCompleted() {
-    return answerResults.where((e) => e != null).length == totalQuestions;
+    return answerResults.where((e) => e != null).length ==
+        widget.examQuestions.length;
   }
 
-  Future<void> _saveResultToPrefs(int correct) async {
+  Future<void> _saveResultToPrefs(int correctCount) async {
     final prefs = await SharedPreferences.getInstance();
-    final history = prefs.getStringList('history') ?? [];
+    final history = prefs.getStringList('exam_history') ?? [];
 
     final entry = {
-      'correct': correct,
-      'total': totalQuestions,
+      'exam': widget.examIndex,
+      'correct': correctCount,
+      'total': widget.examQuestions.length,
+      'hasDiemLiet': widget.examQuestions.asMap().entries.any((e) {
+        final i = e.key;
+        final q = e.value;
+        return q.isDiemLiet && answerResults[i] == false;
+      }),
       'timestamp': DateTime.now().toIso8601String(),
     };
 
-    await prefs.setStringList('history', [
-      ...history,
+    // Remove any previous result of this exam
+    final filtered = history.where((h) {
+      try {
+        final data = json.decode(h);
+        return data['exam'] != widget.examIndex;
+      } catch (_) {
+        return true;
+      }
+    }).toList();
+
+    await prefs.setStringList('exam_history', [
+      ...filtered,
       jsonEncode(entry),
     ]);
   }
@@ -114,16 +129,16 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
     _timer?.cancel();
     final correctCount = answerResults.where((e) => e == true).length;
     _saveResultToPrefs(correctCount);
-
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (_) => ResultPage(
           correctCount: correctCount,
-          totalQuestions: totalQuestions,
-          duration: examDuration - remainingTime,
+          totalQuestions: widget.examQuestions.length,
+          duration: const Duration(minutes: 19) - remainingTime,
           answerResults: answerResults,
-          isDiemLietList: quizQuestions.map((q) => q.isDiemLiet).toList(),
+          isDiemLietList:
+              widget.examQuestions.map((q) => q.isDiemLiet).toList(),
         ),
       ),
     );
@@ -133,7 +148,7 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Quay về trang chủ'),
+        title: const Text('Kết thúc đề thi'),
         content:
             const Text('Bạn có chắc muốn kết thúc bài thi và xem kết quả?'),
         actions: [
@@ -169,8 +184,9 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
-        children: List.generate(totalQuestions, (index) {
+        children: List.generate(widget.examQuestions.length, (index) {
           Color color;
+
           if (index == currentIndex) {
             color = Colors.blue;
           } else if (answerResults[index] == true) {
@@ -211,7 +227,7 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
 
   @override
   Widget build(BuildContext context) {
-    final question = quizQuestions[currentIndex];
+    final question = widget.examQuestions[currentIndex];
 
     return WillPopScope(
       onWillPop: _onBackPressed,
@@ -233,7 +249,7 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
                         ),
                         Expanded(
                           child: Text(
-                            'Câu ${currentIndex + 1}/$totalQuestions',
+                            'Câu ${currentIndex + 1}/${widget.examQuestions.length}',
                             style: const TextStyle(
                                 fontSize: 18, color: Colors.white),
                             textAlign: TextAlign.center,

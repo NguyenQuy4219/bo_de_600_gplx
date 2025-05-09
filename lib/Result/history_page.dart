@@ -20,9 +20,10 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Future<void> _loadHistory() async {
     final prefs = await SharedPreferences.getInstance();
-    final rawList = prefs.getStringList('history') ?? [];
+    final raw1 = prefs.getStringList('history') ?? [];
+    final raw2 = prefs.getStringList('exam_history') ?? [];
 
-    final parsed = rawList
+    final parsed = [...raw1, ...raw2]
         .map((e) {
           try {
             return Map<String, dynamic>.from(json.decode(e));
@@ -34,8 +35,7 @@ class _HistoryPageState extends State<HistoryPage> {
         .cast<Map<String, dynamic>>()
         .toList();
 
-    parsed.sort((a, b) =>
-        b['timestamp'].compareTo(a['timestamp'])); // mới nhất lên trên
+    parsed.sort((a, b) => b['timestamp'].compareTo(a['timestamp']));
 
     setState(() {
       history = parsed;

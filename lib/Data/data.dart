@@ -61,6 +61,15 @@ final List<Map<String, String>> licenseTypes = const [
   },
 ];
 
+List<List<Question>> examSets = [];
+
+void generateExamSets() {
+  List<Question> shuffled = List.from(questions)..shuffle();
+  for (int i = 0; i < 10; i++) {
+    examSets.add(shuffled.skip(i * 60).take(60).toList());
+  }
+}
+
 class Question {
   final int id;
   final String questionText;

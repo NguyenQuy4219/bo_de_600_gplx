@@ -21,6 +21,7 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
   int? selectedAnswer;
   List<int?> userAnswers = [];
   List<bool?> answerResults = [];
+  List<Question> incorrectQuestions = [];
 
   late Duration remainingTime;
   Timer? _timer;
@@ -35,7 +36,7 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
       if (!mounted) return;
       setState(() {
         if (remainingTime.inSeconds > 0) {
-          remainingTime = remainingTime - const Duration(seconds: 1);
+          remainingTime -= const Duration(seconds: 1);
         } else {
           timer.cancel();
           _navigateToResultPage();
@@ -58,17 +59,21 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
   }
 
   void _checkAnswer() {
-    final correct =
-        selectedAnswer == quizQuestions[currentIndex].correctAnswerIndex;
+    final question = quizQuestions[currentIndex];
+    final correct = selectedAnswer == question.correctAnswerIndex;
     userAnswers[currentIndex] = selectedAnswer;
     answerResults[currentIndex] = correct;
+
+    if (!correct) {
+      incorrectQuestions.add(question);
+    }
 
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: Text(correct ? '✅ Chính xác!' : '❌ Sai rồi'),
         content: Text(
-          'Đáp án đúng là: ${quizQuestions[currentIndex].answers[quizQuestions[currentIndex].correctAnswerIndex]}',
+          'Đáp án đúng là: ${question.answers[question.correctAnswerIndex]}',
         ),
         actions: [
           TextButton(
@@ -94,6 +99,13 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
     return answerResults.where((e) => e != null).length == totalQuestions;
   }
 
+  Future<void> _saveIncorrectQuestions() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList =
+        incorrectQuestions.map((q) => jsonEncode(q.toJson())).toList();
+    await prefs.setStringList('incorrect_questions', jsonList);
+  }
+
   Future<void> _saveResultToPrefs(int correct) async {
     final prefs = await SharedPreferences.getInstance();
     final history = prefs.getStringList('history') ?? [];
@@ -113,7 +125,9 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
   void _navigateToResultPage() {
     _timer?.cancel();
     final correctCount = answerResults.where((e) => e == true).length;
+
     _saveResultToPrefs(correctCount);
+    _saveIncorrectQuestions(); // ✅ lưu câu sai
 
     Navigator.pushReplacement(
       context,

@@ -1,7 +1,9 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:bo_de_600_gplx/Data/data.dart';
+import 'dart:convert';
 import 'package:bo_de_600_gplx/Question/wrong_questions.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bo_de_600_gplx/Data/data.dart';
 
 class QuestionScreen extends StatefulWidget {
   const QuestionScreen({super.key});
@@ -64,12 +66,17 @@ class _QuestionScreenState extends State<QuestionScreen> {
     }
   }
 
-  void checkAnswer() {
+  void checkAnswer() async {
     final question = fatalQuestions[currentIndex];
     final isCorrect = selectedOption == question.correctAnswerIndex;
     answerResults[currentIndex] = isCorrect;
     if (!isCorrect && !incorrectQuestions.contains(question)) {
       incorrectQuestions.add(question);
+    }
+
+    // Nếu là câu cuối cùng → lưu lại
+    if (currentIndex == fatalQuestions.length - 1) {
+      await _saveIncorrectQuestions();
     }
 
     showDialog(
@@ -92,7 +99,9 @@ class _QuestionScreenState extends State<QuestionScreen> {
     );
   }
 
-  void _showTimeUpDialog() {
+  void _showTimeUpDialog() async {
+    await _saveIncorrectQuestions();
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -146,6 +155,13 @@ class _QuestionScreenState extends State<QuestionScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _saveIncorrectQuestions() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList =
+        incorrectQuestions.map((q) => jsonEncode(q.toJson())).toList();
+    await prefs.setStringList('incorrect_questions', jsonList);
   }
 
   String _formatTime(Duration duration) {
@@ -211,7 +227,8 @@ class _QuestionScreenState extends State<QuestionScreen> {
           IconButton(
             icon: const Icon(Icons.error_outline),
             tooltip: 'Xem câu sai',
-            onPressed: () {
+            onPressed: () async {
+              await _saveIncorrectQuestions(); // Lưu trước khi mở
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -247,9 +264,10 @@ class _QuestionScreenState extends State<QuestionScreen> {
                         Text(
                           question.questionText,
                           style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         ...List.generate(question.answers.length, (index) {
@@ -272,7 +290,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
                             child: const Text('Kiểm tra đáp án'),
                           ),
                         ),
-                        const SizedBox(height: 80), // để tránh bị nút đè lên
+                        const SizedBox(height: 80),
                       ],
                     ),
                   ),

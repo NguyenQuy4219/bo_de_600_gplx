@@ -84,6 +84,22 @@ class Question {
     required this.correctAnswerIndex,
     required this.isDiemLiet,
   });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'questionText': questionText,
+        'answers': answers,
+        'correctAnswerIndex': correctAnswerIndex,
+        'isDiemLiet': isDiemLiet,
+      };
+
+  factory Question.fromJson(Map<String, dynamic> json) => Question(
+        id: json['id'],
+        questionText: json['questionText'],
+        answers: List<String>.from(json['answers']),
+        correctAnswerIndex: json['correctAnswerIndex'],
+        isDiemLiet: json['isDiemLiet'],
+      );
 }
 
 final List<Question> questions = [
@@ -2357,4 +2373,3 @@ final List<Question> questions = [
 ];
 
 final List<Question> incorrectQuestions = [];
-  

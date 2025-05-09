@@ -106,9 +106,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => IncorrectQuestionsScreen(
-                    incorrectQuestions: incorrectQuestions,
-                  ),
+                  builder: (context) => const IncorrectQuestionsPage(),
                 ),
               );
             },
@@ -217,9 +215,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => IncorrectQuestionsScreen(
-                    incorrectQuestions: incorrectQuestions,
-                  ),
+                  builder: (context) => const IncorrectQuestionsPage(),
                 ),
               );
             },

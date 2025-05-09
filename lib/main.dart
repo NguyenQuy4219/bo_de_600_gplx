@@ -59,10 +59,11 @@ class _MyHomePageState extends State<MyHomePage> {
           MaterialPageRoute(builder: (context) => TrafficSignsScreen()));
     } else if (title == 'Xem câu bị sai') {
       Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => IncorrectQuestionsScreen(
-                  incorrectQuestions: incorrectQuestions)));
+        context,
+        MaterialPageRoute(
+          builder: (context) => const IncorrectQuestionsPage(),
+        ),
+      );
     } else if (title == 'Thi theo bộ đề') {
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => const ExamListScreen()));

@@ -8,6 +8,7 @@ import 'Tip/Tip_page.dart';
 import 'Settings/setting_page.dart';
 import 'Data/data.dart';
 import 'Data/traffic_sign.dart';
+import 'Question/wrong_questions.dart';
 
 void main() {
   runApp(const MyApp());
@@ -52,15 +53,20 @@ class _MyHomePageState extends State<MyHomePage> {
           context, MaterialPageRoute(builder: (context) => TipsScreen()));
     } else if (title == 'Đề ngẫu nhiên') {
       Navigator.push(context,
-          MaterialPageRoute(builder: (context) => const CauHoiNgauNhienPage()));
+          MaterialPageRoute(builder: (context) => CauHoiNgauNhienPage()));
     } else if (title == 'Các biển báo') {
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => TrafficSignsScreen()));
+    } else if (title == 'Xem câu bị sai') {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => IncorrectQuestionsScreen(
+                  incorrectQuestions: incorrectQuestions)));
     } else if (title == 'Thi theo bộ đề') {
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => const ExamListScreen()));
     }
-    // Các mục khác có thể thêm vào tương tự
   }
 
   @override

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:bo_de_600_gplx/Data/data.dart';
+import 'package:bo_de_600_gplx/Question/wrong_questions.dart';
 
 class QuestionScreen extends StatefulWidget {
   const QuestionScreen({super.key});
@@ -11,6 +12,7 @@ class QuestionScreen extends StatefulWidget {
 
 class _QuestionScreenState extends State<QuestionScreen> {
   List<Question> fatalQuestions = [];
+  List<Question> incorrectQuestions = [];
   int currentIndex = 0;
   int? selectedOption;
   List<bool?> answerResults = [];
@@ -66,6 +68,9 @@ class _QuestionScreenState extends State<QuestionScreen> {
     final question = fatalQuestions[currentIndex];
     final isCorrect = selectedOption == question.correctAnswerIndex;
     answerResults[currentIndex] = isCorrect;
+    if (!isCorrect && !incorrectQuestions.contains(question)) {
+      incorrectQuestions.add(question);
+    }
 
     showDialog(
       context: context,
@@ -96,8 +101,25 @@ class _QuestionScreenState extends State<QuestionScreen> {
         content: const Text('Bạn đã hết thời gian làm bài.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => IncorrectQuestionsScreen(
+                    incorrectQuestions: incorrectQuestions,
+                  ),
+                ),
+              );
+            },
+            child: const Text('Xem câu sai'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            child: const Text('Về trang chủ'),
           ),
         ],
       ),
@@ -188,6 +210,20 @@ class _QuestionScreenState extends State<QuestionScreen> {
         backgroundColor: Colors.blue,
         title: Text('Câu ${currentIndex + 1} / ${fatalQuestions.length}'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.error_outline),
+            tooltip: 'Xem câu sai',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => IncorrectQuestionsScreen(
+                    incorrectQuestions: incorrectQuestions,
+                  ),
+                ),
+              );
+            },
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: Center(

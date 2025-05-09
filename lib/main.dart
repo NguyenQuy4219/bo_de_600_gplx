@@ -1,3 +1,5 @@
+import 'package:bo_de_600_gplx/Set-of-question/exam_list.dart';
+
 import 'Traffic_sign/traffic_sign_page.dart';
 import 'package:flutter/material.dart';
 import 'Question/random_question_page.dart';
@@ -54,6 +56,9 @@ class _MyHomePageState extends State<MyHomePage> {
     } else if (title == 'Các biển báo') {
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => TrafficSignsScreen()));
+    } else if (title == 'Thi theo bộ đề') {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => const ExamListScreen()));
     }
     // Các mục khác có thể thêm vào tương tự
   }

@@ -1,3 +1,4 @@
+import 'package:bo_de_600_gplx/Review-question/review_question_list_page.dart';
 import 'package:bo_de_600_gplx/Set-of-question/exam_list.dart';
 
 import 'Traffic_sign/traffic_sign_page.dart';
@@ -7,8 +8,9 @@ import 'Question/60_Questions_page.dart';
 import 'Tip/Tip_page.dart';
 import 'Settings/setting_page.dart';
 import 'Data/data.dart';
-import 'Data/traffic_sign.dart';
+// import 'Data/traffic_sign.dart';
 import 'Question/wrong_questions.dart';
+// import 'Data/traffic_sign.dart';
 
 void main() {
   runApp(const MyApp());
@@ -67,6 +69,9 @@ class _MyHomePageState extends State<MyHomePage> {
     } else if (title == 'Thi theo bộ đề') {
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => const ExamListScreen()));
+    } else if (title == 'Ôn tập câu hỏi') {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => StudyProgressPage()));
     }
   }
 

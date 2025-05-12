@@ -1,3 +1,4 @@
+import 'package:bo_de_600_gplx/Question/Top_50_questions_wrong.dart';
 import 'package:bo_de_600_gplx/Review-question/review_question_list_page.dart';
 import 'package:bo_de_600_gplx/Set-of-question/exam_list.dart';
 
@@ -69,6 +70,9 @@ class _MyHomePageState extends State<MyHomePage> {
     } else if (title == 'Thi theo bộ đề') {
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => const ExamListScreen()));
+    } else if (title == 'Top 50 câu sai') {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => const Top50QuestionScreen()));
     } else if (title == 'Ôn tập câu hỏi') {
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => StudyProgressPage()));

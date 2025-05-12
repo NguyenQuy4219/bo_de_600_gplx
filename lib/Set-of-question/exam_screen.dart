@@ -1,9 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Data/data.dart';
 import '../Result/result_page.dart';
-import 'dart:convert';
 
 class ExamScreen extends StatefulWidget {
   final int examIndex;
@@ -24,6 +24,7 @@ class _ExamScreenState extends State<ExamScreen> {
   int? selectedAnswer;
   List<int?> userAnswers = [];
   List<bool?> answerResults = [];
+  List<Question> incorrectQuestions = [];
 
   Duration remainingTime = const Duration(minutes: 19);
   Timer? _timer;
@@ -31,7 +32,6 @@ class _ExamScreenState extends State<ExamScreen> {
   @override
   void initState() {
     super.initState();
-
     userAnswers = List.filled(widget.examQuestions.length, null);
     answerResults = List.filled(widget.examQuestions.length, null);
 
@@ -61,13 +61,16 @@ class _ExamScreenState extends State<ExamScreen> {
     userAnswers[currentIndex] = selectedAnswer;
     answerResults[currentIndex] = correct;
 
+    if (!correct) {
+      incorrectQuestions.add(question);
+    }
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: Text(correct ? '✅ Chính xác!' : '❌ Sai rồi'),
         content: Text(
-          'Đáp án đúng là: ${question.answers[question.correctAnswerIndex]}',
-        ),
+            'Đáp án đúng là: ${question.answers[question.correctAnswerIndex]}'),
         actions: [
           TextButton(
             onPressed: () {
@@ -93,6 +96,12 @@ class _ExamScreenState extends State<ExamScreen> {
         widget.examQuestions.length;
   }
 
+  Future<void> _saveIncorrectQuestions(List<Question> questions) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = questions.map((q) => jsonEncode(q.toJson())).toList();
+    await prefs.setStringList('incorrect_questions', jsonList);
+  }
+
   Future<void> _saveResultToPrefs(int correctCount) async {
     final prefs = await SharedPreferences.getInstance();
     final history = prefs.getStringList('exam_history') ?? [];
@@ -109,7 +118,6 @@ class _ExamScreenState extends State<ExamScreen> {
       'timestamp': DateTime.now().toIso8601String(),
     };
 
-    // Remove any previous result of this exam
     final filtered = history.where((h) {
       try {
         final data = json.decode(h);
@@ -119,16 +127,16 @@ class _ExamScreenState extends State<ExamScreen> {
       }
     }).toList();
 
-    await prefs.setStringList('exam_history', [
-      ...filtered,
-      jsonEncode(entry),
-    ]);
+    await prefs.setStringList('exam_history', [...filtered, jsonEncode(entry)]);
   }
 
   void _navigateToResultPage() {
     _timer?.cancel();
     final correctCount = answerResults.where((e) => e == true).length;
+
     _saveResultToPrefs(correctCount);
+    _saveIncorrectQuestions(incorrectQuestions); // 🔁 lưu câu sai
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -186,7 +194,6 @@ class _ExamScreenState extends State<ExamScreen> {
       child: Row(
         children: List.generate(widget.examQuestions.length, (index) {
           Color color;
-
           if (index == currentIndex) {
             color = Colors.blue;
           } else if (answerResults[index] == true) {

@@ -44,7 +44,9 @@ class ResultPage extends StatelessWidget {
       body: Column(
         children: [
           Container(
-            color: hasDiemLiet ? Colors.red.shade100 : Colors.green.shade100,
+            color: hasDiemLiet || correctCount < 21
+                ? Colors.red.shade100
+                : Colors.green.shade100,
             padding: const EdgeInsets.symmetric(vertical: 12),
             width: double.infinity,
             child: Text(
@@ -56,7 +58,9 @@ class ResultPage extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: hasDiemLiet ? Colors.red : Colors.green,
+                color: hasDiemLiet || correctCount < 21
+                    ? Colors.red
+                    : Colors.green,
                 fontWeight: FontWeight.bold,
               ),
             ),

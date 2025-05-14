@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Data/data.dart';
+import '../Question/wrong_questions.dart';
 import '../Result/result_page.dart';
 
 class ExamScreen extends StatefulWidget {
@@ -261,6 +262,20 @@ class _ExamScreenState extends State<ExamScreen> {
                                 fontSize: 18, color: Colors.white),
                             textAlign: TextAlign.center,
                           ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.error_outline),
+                          tooltip: 'Xem câu sai',
+                          onPressed: () async {
+                            await _saveIncorrectQuestions(incorrectQuestions);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const IncorrectQuestionsPage(),
+                              ),
+                            );
+                          },
                         ),
                         Text(
                           _formatTime(remainingTime),

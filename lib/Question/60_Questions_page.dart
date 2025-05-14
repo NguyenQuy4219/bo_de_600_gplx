@@ -4,6 +4,8 @@ import 'package:bo_de_600_gplx/Question/wrong_questions.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bo_de_600_gplx/Data/data.dart';
+import 'package:bo_de_600_gplx/Result/history_page.dart';
+import 'package:bo_de_600_gplx/Result/result_page.dart';
 
 class QuestionScreen extends StatefulWidget {
   const QuestionScreen({super.key});
@@ -19,12 +21,14 @@ class _QuestionScreenState extends State<QuestionScreen> {
   int? selectedOption;
   List<bool?> answerResults = [];
 
-  Duration remainingTime = const Duration(minutes: 15);
+  Duration ExamRemainingTime = const Duration(minutes: 15);
   Timer? _timer;
+  late Duration remainingTime;
 
   @override
   void initState() {
     super.initState();
+    remainingTime = ExamRemainingTime;
     fatalQuestions = questions.where((q) => q.isDiemLiet).toList()..shuffle();
     fatalQuestions = fatalQuestions.take(60).toList();
     answerResults = List.filled(fatalQuestions.length, null);
@@ -99,6 +103,13 @@ class _QuestionScreenState extends State<QuestionScreen> {
     );
   }
 
+  Future<void> _saveIncorrectQuestions() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList =
+        incorrectQuestions.map((q) => jsonEncode(q.toJson())).toList();
+    await prefs.setStringList('incorrect_questions', jsonList);
+  }
+
   void _showTimeUpDialog() async {
     await _saveIncorrectQuestions();
 
@@ -124,9 +135,9 @@ class _QuestionScreenState extends State<QuestionScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pop(context);
+              _navigateToResultPage();
             },
-            child: const Text('Về trang chủ'),
+            child: const Text('Xem kết quả'),
           ),
         ],
       ),
@@ -148,7 +159,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context); // đóng dialog
-              Navigator.pop(context); // quay về trang chủ
+              _navigateToResultPage();
             },
             child: const Text('Có'),
           ),
@@ -157,11 +168,21 @@ class _QuestionScreenState extends State<QuestionScreen> {
     );
   }
 
-  Future<void> _saveIncorrectQuestions() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonList =
-        incorrectQuestions.map((q) => jsonEncode(q.toJson())).toList();
-    await prefs.setStringList('incorrect_questions', jsonList);
+  void _navigateToResultPage() {
+    final correctCount = answerResults.where((e) => e == true).length;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ResultPage(
+          correctCount: correctCount,
+          totalQuestions: fatalQuestions.length,
+          duration: ExamRemainingTime - remainingTime,
+          answerResults: answerResults,
+          isDiemLietList: fatalQuestions.map((q) => q.isDiemLiet).toList(),
+        ),
+      ),
+    );
   }
 
   String _formatTime(Duration duration) {
@@ -228,7 +249,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
             icon: const Icon(Icons.error_outline),
             tooltip: 'Xem câu sai',
             onPressed: () async {
-              await _saveIncorrectQuestions(); // Lưu trước khi mở
+              await _saveIncorrectQuestions();
               Navigator.push(
                 context,
                 MaterialPageRoute(

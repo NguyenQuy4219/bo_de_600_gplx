@@ -137,7 +137,8 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
           totalQuestions: totalQuestions,
           duration: examDuration - remainingTime,
           answerResults: answerResults,
-          isDiemLietList: quizQuestions.map((q) => q.isDiemLiet).toList(),
+          isDiemLietList:
+              quizQuestions.map((q) => q.isDiemLiet).toList(), // ✅ đúng
         ),
       ),
     );

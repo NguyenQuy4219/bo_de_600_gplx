@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Data/data.dart';
 import '../Result/result_page.dart';
+import 'wrong_questions.dart';
 
 class CauHoiNgauNhienPage extends StatefulWidget {
   const CauHoiNgauNhienPage({super.key});
@@ -137,7 +138,8 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
           totalQuestions: totalQuestions,
           duration: examDuration - remainingTime,
           answerResults: answerResults,
-          isDiemLietList: quizQuestions.map((q) => q.isDiemLiet).toList(),
+          isDiemLietList:
+              quizQuestions.map((q) => q.isDiemLiet).toList(), // ✅ đúng
         ),
       ),
     );
@@ -252,6 +254,20 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
                                 fontSize: 18, color: Colors.white),
                             textAlign: TextAlign.center,
                           ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.error_outline),
+                          tooltip: 'Xem câu sai',
+                          onPressed: () async {
+                            await _saveIncorrectQuestions();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const IncorrectQuestionsPage(),
+                              ),
+                            );
+                          },
                         ),
                         Text(
                           _formatTime(remainingTime),

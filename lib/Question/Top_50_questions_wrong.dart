@@ -54,20 +54,11 @@ class _Top50QuestionScreenState extends State<Top50QuestionScreen> {
     }
   }
 
-  void prevQuestion() {
-    if (currentIndex > 0) {
-      setState(() {
-        currentIndex--;
-        selectedOption = null;
-      });
-    }
-  }
-
   void checkAnswer() {
     final question = fatalQuestions[currentIndex];
     final isCorrect = selectedOption == question.correctAnswerIndex;
     answerResults[currentIndex] = isCorrect;
-    if (!isCorrect && !incorrectQuestions.contains(question)) {
+    if (!isCorrect && !incorrectQuestions.any((q) => q.id == question.id)) {
       incorrectQuestions.add(question);
     }
 
@@ -137,8 +128,8 @@ class _Top50QuestionScreenState extends State<Top50QuestionScreen> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // đóng dialog
-              Navigator.pop(context); // quay về trang chủ
+              Navigator.pop(context);
+              Navigator.pop(context);
             },
             child: const Text('Có'),
           ),
@@ -203,90 +194,84 @@ class _Top50QuestionScreenState extends State<Top50QuestionScreen> {
     final question = fatalQuestions[currentIndex];
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        title: Text('Câu ${currentIndex + 1} / ${fatalQuestions.length}'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.error_outline),
-            tooltip: 'Xem câu sai',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const IncorrectQuestionsPage(),
-                ),
-              );
-            },
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Center(
-              child: Text(
-                _formatTime(remainingTime),
-                style: const TextStyle(fontSize: 16, color: Colors.white),
+      body: Column(
+        children: [
+          SafeArea(
+            child: Container(
+              color: Colors.blue,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: _confirmExit,
+                    icon: const Icon(Icons.home, color: Colors.white),
+                  ),
+                  Expanded(
+                    child: Text(
+                      'Câu ${currentIndex + 1} / ${fatalQuestions.length}',
+                      style: const TextStyle(fontSize: 18, color: Colors.white),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.error_outline, color: Colors.black),
+                    tooltip: 'Xem câu sai',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const IncorrectQuestionsPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  Text(
+                    _formatTime(remainingTime),
+                    style: const TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              _buildProgressBar(),
-              Expanded(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          question.questionText,
-                          style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red),
-                        ),
-                        const SizedBox(height: 16),
-                        ...List.generate(question.answers.length, (index) {
-                          return RadioListTile<int>(
-                            title: Text(' ${question.answers[index]}'),
-                            value: index,
-                            groupValue: selectedOption,
-                            onChanged: (value) {
-                              setState(() {
-                                selectedOption = value;
-                              });
-                            },
-                          );
-                        }),
-                        const SizedBox(height: 20),
-                        Center(
-                          child: ElevatedButton(
-                            onPressed:
-                                selectedOption != null ? checkAnswer : null,
-                            child: const Text('Kiểm tra đáp án'),
-                          ),
-                        ),
-                        const SizedBox(height: 80), // để tránh bị nút đè lên
-                      ],
+          _buildProgressBar(),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      question.questionText,
+                      style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    ...List.generate(question.answers.length, (index) {
+                      return RadioListTile<int>(
+                        title: Text(' ${question.answers[index]}'),
+                        value: index,
+                        groupValue: selectedOption,
+                        onChanged: (value) {
+                          setState(() {
+                            selectedOption = value;
+                          });
+                        },
+                      );
+                    }),
+                    const SizedBox(height: 20),
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: selectedOption != null ? checkAnswer : null,
+                        child: const Text('Kiểm tra đáp án'),
+                      ),
+                    ),
+                    const SizedBox(height: 80),
+                  ],
                 ),
               ),
-            ],
-          ),
-          Positioned(
-            bottom: 20,
-            right: 20,
-            child: FloatingActionButton(
-              backgroundColor: Colors.blue,
-              onPressed: _confirmExit,
-              tooltip: 'Về trang chủ',
-              child: const Icon(Icons.home, color: Colors.white),
             ),
           ),
         ],

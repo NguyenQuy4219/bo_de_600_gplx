@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:bo_de_600_gplx/Data/data.dart';
 import 'wrong_questions.dart';
+import '../Result/result_page.dart';
 
 class Top50QuestionScreen extends StatefulWidget {
   const Top50QuestionScreen({super.key});
@@ -19,6 +20,8 @@ class _Top50QuestionScreenState extends State<Top50QuestionScreen> {
 
   Duration remainingTime = const Duration(minutes: 15);
   Timer? _timer;
+
+  final Duration examDuration = const Duration(minutes: 15);
 
   @override
   void initState() {
@@ -114,6 +117,23 @@ class _Top50QuestionScreenState extends State<Top50QuestionScreen> {
     );
   }
 
+  void _navigateToResultPage() {
+    final correctCount = answerResults.where((e) => e == true).length;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ResultPage(
+          correctCount: correctCount,
+          totalQuestions: fatalQuestions.length,
+          duration: examDuration - remainingTime,
+          answerResults: answerResults,
+          isDiemLietList: fatalQuestions.map((q) => q.isDiemLiet).toList(),
+        ),
+      ),
+    );
+  }
+
   void _confirmExit() {
     showDialog(
       context: context,
@@ -128,8 +148,7 @@ class _Top50QuestionScreenState extends State<Top50QuestionScreen> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
+              _navigateToResultPage();
             },
             child: const Text('Có'),
           ),

@@ -3,7 +3,7 @@ import '../models/question.dart';
 
 class QuestionService {
   Future<List<Question>> fetchQuestions() async {
-    final pb = PocketBase('http://127.0.0.1:8090');
+    final pb = PocketBase('http://10.0.2.2:8090');
     final records = await pb.collection('questions').getFullList();
     return records.map((rec) {
       final raw = rec.data['answers'];

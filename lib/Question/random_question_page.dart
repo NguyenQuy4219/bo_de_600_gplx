@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../Data/data.dart';
+import '../services/question_service.dart';
+import '../models/question.dart';
 import '../Result/result_page.dart';
 import 'wrong_questions.dart';
-import 'package:pocketbase/pocketbase.dart';
 
 class CauHoiNgauNhienPage extends StatefulWidget {
-  const CauHoiNgauNhienPage({super.key});
+  const CauHoiNgauNhienPage({Key? key}) : super(key: key);
 
   @override
   State<CauHoiNgauNhienPage> createState() => _CauHoiNgauNhienPageState();
@@ -17,66 +18,72 @@ class CauHoiNgauNhienPage extends StatefulWidget {
 class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
   final int totalQuestions = 20;
   final Duration examDuration = const Duration(minutes: 19);
+  final QuestionService _service = QuestionService();
 
-  late List<Question> quizQuestions;
+  List<Question>? quizQuestions;
   int currentIndex = 0;
   int? selectedAnswer;
-  List<int?> userAnswers = [];
-  List<bool?> answerResults = [];
+  late List<int?> userAnswers;
+  late List<bool?> answerResults;
   List<Question> incorrectQuestions = [];
 
   late Duration remainingTime;
   Timer? _timer;
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
     remainingTime = examDuration;
-    _generateRandomQuiz();
+    _loadQuestions();
+    _startTimer();
+  }
 
+  Future<void> _loadQuestions() async {
+    final all = await _service.fetchQuestions();
+    final shuffled = List<Question>.from(all)..shuffle(Random());
+    setState(() {
+      quizQuestions = shuffled.take(totalQuestions).toList();
+      userAnswers = List.filled(totalQuestions, null);
+      answerResults = List.filled(totalQuestions, null);
+      incorrectQuestions = [];
+      _loading = false;
+    });
+  }
+
+  void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return;
       setState(() {
         if (remainingTime.inSeconds > 0) {
-          remainingTime -= const Duration(seconds: 1);
+          remainingTime = remainingTime - const Duration(seconds: 1);
         } else {
-          timer.cancel();
+          _timer?.cancel();
           _navigateToResultPage();
         }
       });
     });
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  void _generateRandomQuiz() {
-    quizQuestions = [...questions]..shuffle();
-    quizQuestions = quizQuestions.take(totalQuestions).toList();
-    userAnswers = List.filled(totalQuestions, null);
-    answerResults = List.filled(totalQuestions, null);
+  void _onAnswerSelected(int index) {
+    setState(() {
+      selectedAnswer = index;
+    });
   }
 
   void _checkAnswer() {
-    final question = quizQuestions[currentIndex];
+    final question = quizQuestions![currentIndex];
     final correct = selectedAnswer == question.correctAnswerIndex;
     userAnswers[currentIndex] = selectedAnswer;
     answerResults[currentIndex] = correct;
-
-    if (!correct) {
-      incorrectQuestions.add(question);
-    }
+    if (!correct) incorrectQuestions.add(question);
 
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: Text(correct ? '✅ Chính xác!' : '❌ Sai rồi'),
         content: Text(
-          'Đáp án đúng là: ${question.answers[question.correctAnswerIndex]}',
-        ),
+            'Đáp án đúng: ${question.answers[question.correctAnswerIndex]}'),
         actions: [
           TextButton(
             onPressed: () {
@@ -85,7 +92,7 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
                 if (currentIndex < totalQuestions - 1) {
                   currentIndex++;
                   selectedAnswer = userAnswers[currentIndex];
-                } else if (_isQuizCompleted()) {
+                } else {
                   _navigateToResultPage();
                 }
               });
@@ -97,9 +104,8 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
     );
   }
 
-  bool _isQuizCompleted() {
-    return answerResults.where((e) => e != null).length == totalQuestions;
-  }
+  bool _isQuizCompleted() =>
+      answerResults.where((e) => e != null).length == totalQuestions;
 
   Future<void> _saveIncorrectQuestions() async {
     final prefs = await SharedPreferences.getInstance();
@@ -111,26 +117,19 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
   Future<void> _saveResultToPrefs(int correct) async {
     final prefs = await SharedPreferences.getInstance();
     final history = prefs.getStringList('history') ?? [];
-
-    final entry = {
+    final entry = jsonEncode({
       'correct': correct,
       'total': totalQuestions,
       'timestamp': DateTime.now().toIso8601String(),
-    };
-
-    await prefs.setStringList('history', [
-      ...history,
-      jsonEncode(entry),
-    ]);
+    });
+    await prefs.setStringList('history', [...history, entry]);
   }
 
   void _navigateToResultPage() {
     _timer?.cancel();
     final correctCount = answerResults.where((e) => e == true).length;
-
     _saveResultToPrefs(correctCount);
-    _saveIncorrectQuestions(); // ✅ lưu câu sai
-
+    _saveIncorrectQuestions();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -139,8 +138,7 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
           totalQuestions: totalQuestions,
           duration: examDuration - remainingTime,
           answerResults: answerResults,
-          isDiemLietList:
-              quizQuestions.map((q) => q.isDiemLiet).toList(), // ✅ đúng
+          isDiemLietList: quizQuestions!.map((q) => q.isDiemLiet).toList(),
         ),
       ),
     );
@@ -151,13 +149,11 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Quay về trang chủ'),
-        content:
-            const Text('Bạn có chắc muốn kết thúc bài thi và xem kết quả?'),
+        content: const Text('Kết thúc bài thi bây giờ và xem kết quả?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Không'),
-          ),
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Không')),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
@@ -170,55 +166,45 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
     );
   }
 
-  Future<bool> _onBackPressed() async {
+  Future<bool> _onWillPop() async {
     _confirmExit();
     return false;
   }
 
-  String _formatTime(Duration duration) {
-    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$minutes:$seconds';
+  String _formatTime(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$m:$s';
   }
 
-  Widget _buildProgressBar() {
+  Widget _buildProgressBar() {  
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
-        children: List.generate(totalQuestions, (index) {
-          Color color;
-          if (index == currentIndex) {
-            color = Colors.blue;
-          } else if (answerResults[index] == true) {
-            color = Colors.green;
-          } else if (answerResults[index] == false) {
-            color = Colors.red;
-          } else {
-            color = Colors.grey.shade400;
-          }
-
+        children: List.generate(totalQuestions, (i) {
+          Color c;
+          if (i == currentIndex)
+            c = Colors.blue;
+          else if (answerResults[i] == true)
+            c = Colors.green;
+          else if (answerResults[i] == false)
+            c = Colors.red;
+          else
+            c = Colors.grey.shade400;
           return GestureDetector(
-            onTap: () {
-              setState(() {
-                currentIndex = index;
-                selectedAnswer = userAnswers[index];
-              });
-            },
+            onTap: () => setState(() {
+              currentIndex = i;
+              selectedAnswer = userAnswers[i];
+            }),
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 4),
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(6),
-              ),
+                  color: c, borderRadius: BorderRadius.circular(6)),
               child: Center(
-                child: Text(
-                  '${index + 1}',
-                  style: const TextStyle(fontSize: 14, color: Colors.white),
-                ),
-              ),
+                  child: Text('${i + 1}',
+                      style: const TextStyle(color: Colors.white))),
             ),
           );
         }),
@@ -227,11 +213,21 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final question = quizQuestions[currentIndex];
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    final question = quizQuestions![currentIndex];
     return WillPopScope(
-      onWillPop: _onBackPressed,
+      onWillPop: _onWillPop,
       child: Scaffold(
         body: Column(
           children: [
@@ -245,36 +241,30 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
                     child: Row(
                       children: [
                         IconButton(
-                          onPressed: _confirmExit,
-                          icon: const Icon(Icons.home, color: Colors.white),
-                        ),
+                            onPressed: _confirmExit,
+                            icon: const Icon(Icons.home, color: Colors.white)),
                         Expanded(
-                          child: Text(
-                            'Câu ${currentIndex + 1}/$totalQuestions',
-                            style: const TextStyle(
-                                fontSize: 18, color: Colors.white),
-                            textAlign: TextAlign.center,
-                          ),
+                          child: Text('Câu ${currentIndex + 1}/$totalQuestions',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 18)),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.error_outline),
+                          icon: const Icon(Icons.error_outline,
+                              color: Colors.white),
                           tooltip: 'Xem câu sai',
                           onPressed: () async {
                             await _saveIncorrectQuestions();
                             Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const IncorrectQuestionsPage(),
-                              ),
-                            );
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) =>
+                                        const IncorrectQuestionsPage()));
                           },
                         ),
-                        Text(
-                          _formatTime(remainingTime),
-                          style: const TextStyle(
-                              fontSize: 16, color: Colors.white),
-                        ),
+                        Text(_formatTime(remainingTime),
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 16)),
                       ],
                     ),
                   ),
@@ -284,28 +274,21 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
             ),
             Expanded(
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.all(16.0),
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        question.questionText,
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
+                      Text(question.questionText,
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 12),
-                      ...List.generate(question.answers.length, (index) {
+                      ...List.generate(question.answers.length, (i) {
                         return RadioListTile<int>(
-                          title: Text(question.answers[index]),
-                          value: index,
+                          title: Text(question.answers[i]),
+                          value: i,
                           groupValue: selectedAnswer,
-                          onChanged: (value) {
-                            setState(() {
-                              selectedAnswer = value;
-                            });
-                          },
+                          onChanged: (v) => _onAnswerSelected(v!),
                         );
                       }),
                       const SizedBox(height: 16),

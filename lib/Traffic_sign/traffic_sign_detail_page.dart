@@ -1,50 +1,24 @@
 import 'package:flutter/material.dart';
-import '../data/traffic_sign.dart';
+import '../models/trafficSign.dart';
 
-class TrafficSignDetailScreen extends StatelessWidget {
+class TrafficSignDetailPage extends StatelessWidget {
   final TrafficSign sign;
-
-  const TrafficSignDetailScreen({super.key, required this.sign});
+  const TrafficSignDetailPage({required this.sign, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(sign.title),
-      ),
+      appBar: AppBar(title: Text(sign.signId)),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Image.asset(
-              sign.imagePath,
-              width: 150,
-              height: 150,
-              fit: BoxFit.contain,
-            ),
+            Image.network(sign.imageUrl),
             const SizedBox(height: 16),
-            Text(
-              'Ký hiệu: ${sign.id}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Colors.blue,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              sign.title,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              sign.description,
-              style: const TextStyle(fontSize: 16),
-            ),
+            Text(sign.title, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            Text(sign.description),
           ],
         ),
       ),

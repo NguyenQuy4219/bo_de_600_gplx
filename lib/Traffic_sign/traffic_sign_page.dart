@@ -1,80 +1,71 @@
 import 'package:flutter/material.dart';
-import '../data/data.dart';
-import '../data/traffic_sign.dart';
+import '../models/trafficSign.dart';
+import '../services/trafficSign_service.dart';
 import 'traffic_sign_detail_page.dart';
 
 class TrafficSignsScreen extends StatelessWidget {
-  const TrafficSignsScreen({super.key});
+  const TrafficSignsScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Biển báo giao thông'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Biển báo cấm'),
-              Tab(text: 'Biển báo nguy hiểm'),
-              Tab(text: 'Biển báo hiệu lệnh'),
-            ],
+    return FutureBuilder<List<TrafficSign>>(
+      future: TrafficSignService().fetchAll(),
+      builder: (ctx, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const Scaffold(
+              body: Center(child: CircularProgressIndicator()));
+        }
+        if (snap.hasError) {
+          return Scaffold(body: Center(child: Text('Error: ${snap.error}')));
+        }
+
+        final signs = snap.data!;
+        final prohibitory =
+            signs.where((s) => s.signId.startsWith('P.')).toList();
+        final warning = signs.where((s) => s.signId.startsWith('W.')).toList();
+        final mandatory =
+            signs.where((s) => s.signId.startsWith('R.')).toList();
+
+        return DefaultTabController(
+          length: 3,
+          child: Scaffold(
+            appBar: AppBar(
+              title: const Text('Biển báo giao thông'),
+              bottom: const TabBar(
+                tabs: [
+                  Tab(text: 'Cấm'),
+                  Tab(text: 'Nguy hiểm'),
+                  Tab(text: 'Hiệu lệnh')
+                ],
+              ),
+            ),
+            body: TabBarView(
+              children: [
+                _buildList(context, prohibitory),
+                _buildList(context, warning),
+                _buildList(context, mandatory),
+              ],
+            ),
           ),
-        ),
-        body: TabBarView(
-          children: [
-            _buildSignList(trafficSigns),
-            _buildSignList(dangerSigns),
-            _buildSignList(mandantorySigns),
-          ],
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildSignList(List<TrafficSign> signs) {
+  Widget _buildList(BuildContext c, List<TrafficSign> list) {
     return ListView.builder(
-      physics: const BouncingScrollPhysics(),
-      itemCount: signs.length,
-      itemBuilder: (context, index) {
-        final sign = signs[index];
-        return Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Card(
-            elevation: 2,
-            child: ListTile(
-              leading: Image.asset(
-                sign.imagePath,
-                width: 50,
-                height: 50,
-                fit: BoxFit.cover,
-              ),
-              title: Text(
-                sign.id,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
-                ),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    sign.title,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(sign.description),
-                ],
-              ),
-              isThreeLine: true,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => TrafficSignDetailScreen(sign: sign),
-                ),
-              ),
-            ),
+      itemCount: list.length,
+      itemBuilder: (_, i) {
+        final s = list[i];
+        return ListTile(
+          leading: Image.network(s.imageUrl,
+              width: 48, height: 48, fit: BoxFit.cover),
+          title: Text('${s.signId} — ${s.title}',
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Text(s.description),
+          onTap: () => Navigator.push(
+            c,
+            MaterialPageRoute(builder: (_) => TrafficSignDetailPage(sign: s)),
           ),
         );
       },

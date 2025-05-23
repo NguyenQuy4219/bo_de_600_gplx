@@ -281,7 +281,8 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(question.questionText,
+                      Text(
+                          'Câu ${question.indexNumber}: ${question.questionText}',
                           style: const TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 12),

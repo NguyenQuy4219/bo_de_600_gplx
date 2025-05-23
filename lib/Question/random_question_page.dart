@@ -177,9 +177,10 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
     return '$m:$s';
   }
 
-  Widget _buildProgressBar() {  
+  Widget _buildProgressBar() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
         children: List.generate(totalQuestions, (i) {
           Color c;
@@ -274,7 +275,8 @@ class _CauHoiNgauNhienPageState extends State<CauHoiNgauNhienPage> {
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

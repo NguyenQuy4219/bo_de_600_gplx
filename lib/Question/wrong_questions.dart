@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import '../Data/data.dart';
+import '../models/question.dart';
 
 class IncorrectQuestionsPage extends StatefulWidget {
   const IncorrectQuestionsPage({super.key});

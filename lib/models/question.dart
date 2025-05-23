@@ -19,6 +19,7 @@ class Question {
 
   Map<String, dynamic> toJson() => {
         'id': id,
+        'indexNumber': indexNumber,
         'questionText': questionText,
         'answers': answers,
         'correctAnswerIndex': correctAnswerIndex,

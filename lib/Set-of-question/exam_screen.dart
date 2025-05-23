@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../Data/data.dart';
+import '../models/question.dart';
 import '../Question/wrong_questions.dart';
 import '../Result/result_page.dart';
 

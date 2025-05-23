@@ -1,85 +1,95 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:bo_de_600_gplx/Data/data.dart';
-import 'wrong_questions.dart';
+import 'package:flutter/material.dart';
+import '../services/question_service.dart';
+import '../models/question.dart';
 import '../Result/result_page.dart';
+import 'wrong_questions.dart';
 
 class Top50QuestionScreen extends StatefulWidget {
-  const Top50QuestionScreen({super.key});
+  const Top50QuestionScreen({Key? key}) : super(key: key);
 
   @override
   State<Top50QuestionScreen> createState() => _Top50QuestionScreenState();
 }
 
 class _Top50QuestionScreenState extends State<Top50QuestionScreen> {
-  List<Question> fatalQuestions = [];
+  final QuestionService _service = QuestionService();
+  final int totalQuestions = 50;
+  final Duration examDuration = const Duration(minutes: 15);
+
+  List<Question>? fatalQuestions;
   List<Question> incorrectQuestions = [];
+  List<bool?> answerResults = [];
   int currentIndex = 0;
   int? selectedOption;
-  List<bool?> answerResults = [];
 
-  Duration remainingTime = const Duration(minutes: 15);
+  late Duration remainingTime;
   Timer? _timer;
-
-  final Duration examDuration = const Duration(minutes: 15);
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    fatalQuestions = questions.take(50).toList();
-    answerResults = List.filled(fatalQuestions.length, null);
+    remainingTime = examDuration;
+    _loadQuestions();
+    _startTimer();
+  }
 
+  Future<void> _loadQuestions() async {
+    final all = await _service.fetchQuestions();
+    final list = List<Question>.from(all)..shuffle();
+    setState(() {
+      fatalQuestions = list.take(totalQuestions).toList();
+      answerResults = List<bool?>.filled(totalQuestions, null);
+      incorrectQuestions = [];
+      _loading = false;
+    });
+  }
+
+  void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return;
       setState(() {
         if (remainingTime.inSeconds > 0) {
           remainingTime -= const Duration(seconds: 1);
         } else {
-          timer.cancel();
+          _timer?.cancel();
           _showTimeUpDialog();
         }
       });
     });
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
+  void _onOptionSelected(int? value) {
+    setState(() => selectedOption = value);
   }
 
-  void nextQuestion() {
-    if (currentIndex < fatalQuestions.length - 1) {
-      setState(() {
-        currentIndex++;
-        selectedOption = null;
-      });
-    }
-  }
-
-  void checkAnswer() {
-    final question = fatalQuestions[currentIndex];
-    final isCorrect = selectedOption == question.correctAnswerIndex;
+  void _checkAnswer() {
+    final q = fatalQuestions![currentIndex];
+    final isCorrect = selectedOption == q.correctAnswerIndex;
     answerResults[currentIndex] = isCorrect;
-    if (!isCorrect && !incorrectQuestions.any((q) => q.id == question.id)) {
-      incorrectQuestions.add(question);
-    }
+    if (!isCorrect) incorrectQuestions.add(q);
 
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: Text(isCorrect ? '✅ Chính xác!' : '❌ Sai rồi'),
-        content: Text(
-          'Đáp án đúng là: ${question.answers[question.correctAnswerIndex]}',
-        ),
+        content: Text('Đáp án đúng: ${q.answers[q.correctAnswerIndex]}'),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              nextQuestion();
+              if (currentIndex < totalQuestions - 1) {
+                setState(() {
+                  currentIndex++;
+                  selectedOption = null;
+                });
+              } else {
+                _navigateToResultPage();
+              }
             },
             child: const Text('Tiếp tục'),
-          )
+          ),
         ],
       ),
     );
@@ -99,8 +109,7 @@ class _Top50QuestionScreenState extends State<Top50QuestionScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const IncorrectQuestionsPage(),
-                ),
+                    builder: (_) => const IncorrectQuestionsPage()),
               );
             },
             child: const Text('Xem câu sai'),
@@ -117,23 +126,6 @@ class _Top50QuestionScreenState extends State<Top50QuestionScreen> {
     );
   }
 
-  void _navigateToResultPage() {
-    final correctCount = answerResults.where((e) => e == true).length;
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ResultPage(
-          correctCount: correctCount,
-          totalQuestions: fatalQuestions.length,
-          duration: examDuration - remainingTime,
-          answerResults: answerResults,
-          isDiemLietList: fatalQuestions.map((q) => q.isDiemLiet).toList(),
-        ),
-      ),
-    );
-  }
-
   void _confirmExit() {
     showDialog(
       context: context,
@@ -143,11 +135,11 @@ class _Top50QuestionScreenState extends State<Top50QuestionScreen> {
             const Text('Bạn có chắc muốn kết thúc bài và quay về trang chủ?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Không'),
-          ),
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Không')),
           TextButton(
             onPressed: () {
+              Navigator.pop(context);
               _navigateToResultPage();
             },
             child: const Text('Có'),
@@ -157,50 +149,58 @@ class _Top50QuestionScreenState extends State<Top50QuestionScreen> {
     );
   }
 
-  String _formatTime(Duration duration) {
-    final minutes = duration.inMinutes.toString().padLeft(2, '0');
-    final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
-    return '$minutes:$seconds';
+  void _navigateToResultPage() {
+    _timer?.cancel();
+    final correctCount = answerResults.where((e) => e == true).length;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ResultPage(
+          correctCount: correctCount,
+          totalQuestions: totalQuestions,
+          duration: examDuration - remainingTime,
+          answerResults: answerResults,
+          isDiemLietList: fatalQuestions!.map((q) => q.isDiemLiet).toList(),
+        ),
+      ),
+    );
+  }
+
+  String _formatTime(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$m:$s';
   }
 
   Widget _buildProgressBar() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
-        children: List.generate(fatalQuestions.length, (index) {
-          Color color;
-          if (index == currentIndex) {
-            color = Colors.blue;
-          } else if (answerResults[index] == true) {
-            color = Colors.green;
-          } else if (answerResults[index] == false) {
-            color = Colors.red;
-          } else {
-            color = Colors.grey.shade400;
-          }
+        children: List.generate(totalQuestions, (i) {
+          Color c;
+          if (i == currentIndex)
+            c = Colors.blue;
+          else if (answerResults[i] == true)
+            c = Colors.green;
+          else if (answerResults[i] == false)
+            c = Colors.red;
+          else
+            c = Colors.grey.shade400;
 
           return GestureDetector(
-            onTap: () {
-              setState(() {
-                currentIndex = index;
-                selectedOption = null;
-              });
-            },
+            onTap: () => setState(() {
+              currentIndex = i;
+              selectedOption = null;
+            }),
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 4),
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(6),
-              ),
+                  color: c, borderRadius: BorderRadius.circular(6)),
               child: Center(
-                child: Text(
-                  '${index + 1}',
-                  style: const TextStyle(fontSize: 13, color: Colors.white),
-                ),
-              ),
+                  child: Text('${i + 1}',
+                      style: const TextStyle(color: Colors.white))),
             ),
           );
         }),
@@ -209,91 +209,91 @@ class _Top50QuestionScreenState extends State<Top50QuestionScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final question = fatalQuestions[currentIndex];
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
-    return Scaffold(
-      body: Column(
-        children: [
-          SafeArea(
-            child: Container(
-              color: Colors.blue,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: _confirmExit,
-                    icon: const Icon(Icons.home, color: Colors.white),
-                  ),
-                  Expanded(
-                    child: Text(
-                      'Câu ${currentIndex + 1} / ${fatalQuestions.length}',
-                      style: const TextStyle(fontSize: 18, color: Colors.white),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.error_outline, color: Colors.black),
-                    tooltip: 'Xem câu sai',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const IncorrectQuestionsPage(),
-                        ),
-                      );
-                    },
-                  ),
-                  Text(
-                    _formatTime(remainingTime),
-                    style: const TextStyle(fontSize: 16, color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          _buildProgressBar(),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    final q = fatalQuestions![currentIndex];
+    return WillPopScope(
+      onWillPop: () async {
+        _confirmExit();
+        return false;
+      },
+      child: Scaffold(
+        body: Column(
+          children: [
+            SafeArea(
+              child: Container(
+                color: Colors.blue,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                child: Row(
                   children: [
-                    Text(
-                      question.questionText,
-                      style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red),
+                    IconButton(
+                        onPressed: _confirmExit,
+                        icon: const Icon(Icons.home, color: Colors.white)),
+                    Expanded(
+                        child: Text('Câu ${currentIndex + 1}/$totalQuestions',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 18))),
+                    IconButton(
+                      onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const IncorrectQuestionsPage())),
+                      icon:
+                          const Icon(Icons.error_outline, color: Colors.white),
                     ),
-                    const SizedBox(height: 16),
-                    ...List.generate(question.answers.length, (index) {
-                      return RadioListTile<int>(
-                        title: Text(' ${question.answers[index]}'),
-                        value: index,
-                        groupValue: selectedOption,
-                        onChanged: (value) {
-                          setState(() {
-                            selectedOption = value;
-                          });
-                        },
-                      );
-                    }),
-                    const SizedBox(height: 20),
-                    Center(
-                      child: ElevatedButton(
-                        onPressed: selectedOption != null ? checkAnswer : null,
-                        child: const Text('Kiểm tra đáp án'),
-                      ),
-                    ),
-                    const SizedBox(height: 80),
+                    Text(_formatTime(remainingTime),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 16)),
                   ],
                 ),
               ),
             ),
-          ),
-        ],
+            _buildProgressBar(),
+            Expanded(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(q.questionText,
+                          style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red)),
+                      const SizedBox(height: 16),
+                      ...List.generate(
+                          q.answers.length,
+                          (i) => RadioListTile<int>(
+                              title: Text(q.answers[i]),
+                              value: i,
+                              groupValue: selectedOption,
+                              onChanged: _onOptionSelected)),
+                      const SizedBox(height: 20),
+                      Center(
+                          child: ElevatedButton(
+                              onPressed:
+                                  selectedOption != null ? _checkAnswer : null,
+                              child: const Text('Kiểm tra đáp án'))),
+                      const SizedBox(height: 80),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

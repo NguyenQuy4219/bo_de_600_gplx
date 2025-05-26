@@ -117,7 +117,7 @@ final List<TrafficSign> mandantorySigns = [
     id: 'R.301c',
     title: 'Các xe chỉ được rẽ trái.',
     description:
-        'Các xe chỉ được rẽ trái (trừ xe được quyền ưu tiên theo quy định). Biển này được đặt ở sau nơi đường giao nhau..',
+        'Các xe chỉ được rẽ trái (trừ xe được quyền ưu tiên theo quy định). Biển này được đặt ở sau nơi đường giao nhau.',
     imagePath: 'assets/hieu-lenh-re-trai.jpg',
   ),
   TrafficSign(

@@ -15,7 +15,7 @@ class TrafficSignsScreen extends StatelessWidget {
           return const Scaffold(
               body: Center(child: CircularProgressIndicator()));
         }
-        if (snap.hasError) {
+        if (snap.hasError) {  
           return Scaffold(body: Center(child: Text('Error: ${snap.error}')));
         }
 
